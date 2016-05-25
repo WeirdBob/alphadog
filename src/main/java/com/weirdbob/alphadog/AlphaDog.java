@@ -11,7 +11,6 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
 import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +58,7 @@ public class AlphaDog implements Closeable {
 				logger.debug("mutex NOT acquired");
 			}
 		} catch (Exception e) {
-			logger.error("Error",e);
+			logger.debug("Error",e);
 		}
         return false;
 	}
@@ -72,12 +71,7 @@ public class AlphaDog implements Closeable {
 		Preconditions.checkArgument(!Strings.isNullOrEmpty(lockName), "lockName is not optionnal");
 		String lockPath = getLockPath(lockName);
         try {
-            byte[] data;
-            try {
-                data = client.getData().forPath(lockPath);
-            } catch(NoNodeException e) {
-                data = null;
-            }
+        	byte[] data = client.getData().forPath(lockPath);
         	if(data == null || data.length == 0) {
         		// never launched -> set last run to epoch
         		data = new byte[]{0,0,0,0,0,0,0,0};
@@ -92,7 +86,7 @@ public class AlphaDog implements Closeable {
         		logger.debug("Executions too close ("+durationSinceLastRun+" < "+periodBetweenRuns+")");
     		}
 		} catch (Exception e) {
-			logger.error("Error",e);
+			logger.debug("Error",e);
 		}
         return false;
 	}
