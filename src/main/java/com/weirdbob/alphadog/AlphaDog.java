@@ -58,7 +58,7 @@ public class AlphaDog implements Closeable {
 				logger.debug("mutex NOT acquired");
 			}
 		} catch (Exception e) {
-			logger.debug("Error",e);
+			logger.error("Error",e);
 		}
         return false;
 	}
@@ -86,7 +86,7 @@ public class AlphaDog implements Closeable {
         		logger.debug("Executions too close ("+durationSinceLastRun+" < "+periodBetweenRuns+")");
     		}
 		} catch (Exception e) {
-			logger.debug("Error",e);
+			logger.error("Error",e);
 		}
         return false;
 	}
