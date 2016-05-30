@@ -48,6 +48,7 @@ public class AlphaDog implements Closeable {
 						client.setData().forPath(mutexPath, Longs.toByteArray(LocalDateTime.now(ZoneId.systemDefault()).toEpochSecond(ZoneOffset.UTC)));
 					} catch (Exception e) {
 						logger.debug("Error writing last run time in parent node",e);
+						throw new RuntimeException(e);
 					}
 					r.run();
 					return true;
@@ -60,6 +61,7 @@ public class AlphaDog implements Closeable {
 			}
 		} catch (Exception e) {
 			logger.error("Error", e);
+			throw new RuntimeException(e);
 		}
         return false;
 	}
@@ -79,6 +81,7 @@ public class AlphaDog implements Closeable {
     		}
 		} catch (Exception e) {
 			logger.error("Error", e);
+			throw new RuntimeException(e);
 		}
         return false;
 	}
