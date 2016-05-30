@@ -11,6 +11,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,21 +63,12 @@ public class AlphaDog implements Closeable {
 		}
         return false;
 	}
-
-	private String getLockPath(String lockName) {
-		return "/alphadog-locks/"+lockName;
-	}
 	
 	public boolean runIfAlpha(Runnable r, String lockName, Duration periodBetweenRuns) {
 		Preconditions.checkArgument(!Strings.isNullOrEmpty(lockName), "lockName is not optionnal");
 		String lockPath = getLockPath(lockName);
         try {
-        	byte[] data = client.getData().forPath(lockPath);
-        	if(data == null || data.length == 0) {
-        		// never launched -> set last run to epoch
-        		data = new byte[]{0,0,0,0,0,0,0,0};
-        	}
-    		LocalDateTime lastRun = LocalDateTime.ofEpochSecond(Longs.fromByteArray(data), 0, ZoneOffset.UTC);
+        	LocalDateTime lastRun = getLastRunTimestamp(lockPath);
     		logger.debug("Last run was "+lastRun);
     		LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
     		Duration durationSinceLastRun = Duration.between(lastRun, now);
@@ -98,5 +90,23 @@ public class AlphaDog implements Closeable {
 			logger.debug("closing client");
 			client.close();
 		}
+	}
+	
+	private String getLockPath(String lockName) {
+		return "/alphadog-locks/"+lockName;
+	}
+	
+	private LocalDateTime getLastRunTimestamp(String lockPath) throws Exception {
+		byte[] data = null;
+		try {
+		    data = client.getData().forPath(lockPath);
+		} catch(NoNodeException e) {
+			// node does not exist, swallow ex and use default value
+		}
+		if(data == null || data.length == 0) {
+    		// never launched -> set last run to epoch
+    		data = new byte[]{0,0,0,0,0,0,0,0};
+    	}
+		return LocalDateTime.ofEpochSecond(Longs.fromByteArray(data), 0, ZoneOffset.UTC);
 	}
 }
